@@ -31,13 +31,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Check if user exists and email is confirmed
+  // Check if user exists
   if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Check email confirmation status
-  if (!user.email_confirmed_at) {
     return <Navigate to="/login" replace />;
   }
 
@@ -56,7 +51,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (user && user.email_confirmed_at) {
+  if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 

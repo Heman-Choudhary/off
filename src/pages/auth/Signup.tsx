@@ -45,9 +45,11 @@ export function Signup() {
     }
 
     try {
+      console.log('Attempting to sign up...');
       const { error } = await signUp(formData.email, formData.password, formData.fullName);
       
       if (error) {
+        console.error('Sign up error:', error);
         if (error.message.includes('already registered')) {
           showError(
             'An account with this email already exists. Please sign in instead or use a different email address.',
@@ -70,6 +72,7 @@ export function Signup() {
           );
         }
       } else {
+        console.log('Sign up successful, showing success message...');
         showSuccess(
           'Registration successful! A confirmation email has been sent to your email address. Please check your inbox and click the confirmation link to activate your account.',
           'Welcome to PrepAI!',
@@ -87,10 +90,12 @@ export function Signup() {
         
         // Redirect to login page after showing success message
         setTimeout(() => {
+          console.log('Redirecting to login page...');
           navigate('/login');
         }, 3000);
       }
     } catch (err) {
+      console.error('Unexpected error during sign up:', err);
       showError(
         'An unexpected error occurred during registration. Please try again.',
         'Registration Error'

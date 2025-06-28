@@ -17,7 +17,7 @@ export function Login() {
   const [showResendOption, setShowResendOption] = useState(false);
 
   const { signIn, resetPassword } = useAuth();
-  const { showError, showSuccess, showInfo } = useToastContext();
+  const { showError, showSuccess } = useToastContext();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,9 +33,11 @@ export function Login() {
     setShowResendOption(false);
 
     try {
+      console.log('Attempting to sign in...');
       const { error } = await signIn(formData.email, formData.password);
       
       if (error) {
+        console.error('Sign in error:', error);
         if (error.message.includes('Invalid login credentials')) {
           showError(
             'Invalid credentials. Please verify your login details or register first if you\'re a new user.',
@@ -59,10 +61,14 @@ export function Login() {
           );
         }
       } else {
+        console.log('Sign in successful, navigating to dashboard...');
         showSuccess('Successfully signed in! Redirecting to dashboard...', 'Welcome Back');
-        navigate('/dashboard');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
       }
     } catch (err) {
+      console.error('Unexpected error during sign in:', err);
       showError(
         'An unexpected error occurred. Please try again.',
         'Sign In Error'

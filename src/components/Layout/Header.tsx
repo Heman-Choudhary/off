@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Mic, User, LogOut } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToastContext } from '../../contexts/ToastContext';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, signOut, loading } = useAuth();
+  const { showSuccess } = useToastContext();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -15,6 +17,7 @@ export function Header() {
       setIsMenuOpen(false); // Close mobile menu first
       await signOut();
       console.log('Header: Sign out completed, navigating to home...');
+      showSuccess('Successfully signed out. See you next time!', 'Goodbye');
       // Use replace to prevent back navigation issues
       navigate('/', { replace: true });
     } catch (error) {
