@@ -4,6 +4,7 @@ import { Mail, Lock, Eye, EyeOff, User, Mic } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToastContext } from '../../contexts/ToastContext';
 
 export function Signup() {
   const [formData, setFormData] = useState({
@@ -15,9 +16,9 @@ export function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const { signUp } = useAuth();
+  const { showError, showSuccess, showInfo } = useToastContext();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,16 +31,15 @@ export function Signup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      showError('Passwords do not match. Please ensure both password fields are identical.', 'Password Mismatch');
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      showError('Password must be at least 6 characters long for security.', 'Password Too Short');
       setLoading(false);
       return;
     }
@@ -48,12 +48,50 @@ export function Signup() {
       const { error } = await signUp(formData.email, formData.password, formData.fullName);
       
       if (error) {
-        setError(error.message);
+        if (error.message.includes('already registered')) {
+          showError(
+            'An account with this email already exists. Please sign in instead or use a different email address.',
+            'Account Already Exists'
+          );
+        } else if (error.message.includes('invalid email')) {
+          showError(
+            'Please enter a valid email address.',
+            'Invalid Email'
+          );
+        } else if (error.message.includes('weak password')) {
+          showError(
+            'Password is too weak. Please use a stronger password with a mix of letters, numbers, and symbols.',
+            'Weak Password'
+          );
+        } else {
+          showError(
+            error.message || 'An unexpected error occurred during registration.',
+            'Registration Error'
+          );
+        }
       } else {
+        showSuccess(
+          'Registration successful! A confirmation email has been sent to your email address. Please check your inbox and click the confirmation link to activate your account.',
+          'Welcome to PrepAI!',
+          8000 // Longer duration for important message
+        );
+        
+        // Show additional info about what to do next
+        setTimeout(() => {
+          showInfo(
+            'Don\'t see the email? Check your spam folder or contact support if you need assistance.',
+            'Email Confirmation',
+            6000
+          );
+        }, 1000);
+        
         navigate('/dashboard');
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      showError(
+        'An unexpected error occurred during registration. Please try again.',
+        'Registration Error'
+      );
     } finally {
       setLoading(false);
     }
@@ -83,12 +121,6 @@ export function Signup() {
         {/* Form */}
         <Card>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
-            )}
-
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
                 Full name

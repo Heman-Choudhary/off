@@ -4,6 +4,7 @@ import { Mail, Lock, Eye, EyeOff, Mic } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToastContext } from '../../contexts/ToastContext';
 
 export function Login() {
   const [formData, setFormData] = useState({
@@ -12,9 +13,9 @@ export function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const { signIn } = useAuth();
+  const { showError, showSuccess } = useToastContext();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,33 +23,46 @@ export function Login() {
       ...formData,
       [e.target.name]: e.target.value
     });
-    // Clear error when user starts typing
-    if (error) {
-      setError('');
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
       const { error } = await signIn(formData.email, formData.password);
       
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          setError('These credentials don\'t match our records. Please create an account first using the signup page or use the correct email/password combination for an existing account.');
+          showError(
+            'Invalid credentials. Please verify your login details or register first if you\'re a new user.',
+            'Sign In Failed'
+          );
         } else if (error.message.includes('Email not confirmed')) {
-          setError('Please check your email and click the confirmation link before signing in.');
+          showError(
+            'Please check your email and click the confirmation link before signing in.',
+            'Email Not Confirmed'
+          );
+        } else if (error.message.includes('Too many requests')) {
+          showError(
+            'Too many login attempts. Please wait a moment before trying again.',
+            'Rate Limited'
+          );
         } else {
-          setError(error.message);
+          showError(
+            error.message || 'An unexpected error occurred during sign in.',
+            'Sign In Error'
+          );
         }
       } else {
+        showSuccess('Successfully signed in! Redirecting to dashboard...', 'Welcome Back');
         navigate('/dashboard');
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      showError(
+        'An unexpected error occurred. Please try again.',
+        'Sign In Error'
+      );
     } finally {
       setLoading(false);
     }
@@ -78,21 +92,6 @@ export function Login() {
         {/* Form */}
         <Card>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-600 text-sm">{error}</p>
-                {error.includes('create an account first') && (
-                  <div className="mt-3">
-                    <Link to="/signup">
-                      <Button variant="outline" size="sm" className="text-red-600 border-red-300 hover:bg-red-50">
-                        Go to Signup Page
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
-
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email address
@@ -197,20 +196,6 @@ export function Login() {
             </div>
           </div>
         </Card>
-
-        {/* Debug info for development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-yellow-800 text-sm">
-              <strong>Development Note:</strong> If you're getting "Invalid login credentials", make sure you have:
-            </p>
-            <ul className="text-yellow-700 text-sm mt-2 list-disc list-inside">
-              <li>Created an account using the signup page</li>
-              <li>Confirmed your email if email confirmation is enabled</li>
-              <li>Using the correct email and password combination</li>
-            </ul>
-          </div>
-        )}
       </div>
     </div>
   );
