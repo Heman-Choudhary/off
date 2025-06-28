@@ -31,14 +31,20 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Check if user exists and email is confirmed
   if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Check email confirmation status
+  if (!user.email_confirmed_at) {
     return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
 }
 
-// Public Route Component (redirect to dashboard if logged in)
+// Public Route Component (redirect to dashboard if logged in and verified)
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
@@ -50,7 +56,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (user) {
+  if (user && user.email_confirmed_at) {
     return <Navigate to="/dashboard" replace />;
   }
 

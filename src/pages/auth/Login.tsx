@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, Mic } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Mic, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,9 +13,11 @@ export function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [showResendOption, setShowResendOption] = useState(false);
 
-  const { signIn } = useAuth();
-  const { showError, showSuccess } = useToastContext();
+  const { signIn, resetPassword } = useAuth();
+  const { showError, showSuccess, showInfo } = useToastContext();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,6 +30,7 @@ export function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setShowResendOption(false);
 
     try {
       const { error } = await signIn(formData.email, formData.password);
@@ -43,6 +46,7 @@ export function Login() {
             'Please check your email and click the confirmation link before signing in.',
             'Email Not Confirmed'
           );
+          setShowResendOption(true);
         } else if (error.message.includes('Too many requests')) {
           showError(
             'Too many login attempts. Please wait a moment before trying again.',
@@ -65,6 +69,38 @@ export function Login() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      showError('Please enter your email address first.', 'Email Required');
+      return;
+    }
+
+    setResendingEmail(true);
+    try {
+      const { error } = await resetPassword(formData.email);
+      
+      if (error) {
+        showError(
+          'Failed to resend verification email. Please try again.',
+          'Resend Failed'
+        );
+      } else {
+        showSuccess(
+          'Verification email has been resent. Please check your inbox and spam folder.',
+          'Email Sent'
+        );
+        setShowResendOption(false);
+      }
+    } catch (err) {
+      showError(
+        'An unexpected error occurred while resending the email.',
+        'Resend Error'
+      );
+    } finally {
+      setResendingEmail(false);
     }
   };
 
@@ -139,13 +175,33 @@ export function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                   )}
                 </button>
               </div>
             </div>
+
+            {/* Resend Verification Email Option */}
+            {showResendOption && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-800 text-sm mb-3">
+                  Haven't received the verification email?
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResendVerification}
+                  loading={resendingEmail}
+                  className="flex items-center space-x-2 text-blue-600 border-blue-300 hover:bg-blue-50"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Resend verification email</span>
+                </Button>
+              </div>
+            )}
 
             <div className="flex items-center justify-between">
               <div className="flex items-center">
